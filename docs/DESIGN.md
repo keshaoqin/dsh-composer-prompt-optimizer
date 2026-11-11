@@ -136,10 +136,11 @@ idle --click--> loading --success--> done(before, after)
 - 路由前缀：`/prompt-optimizer/api`。
 - `GET /health`：返回插件版本、是否有 `llm`、当前解析到的模型。用于调试和安装后自检。
 - `POST /enhance`：
-  - 请求：`{ text }`（`provider` / `model` / `reasoningEffort` 仅为兼容保留，客户端不再发送）。
+  - 请求：`{ text, provider, model }`（`provider` / `model` 来自输入框当前会话的模型选择；`reasoningEffort` 仅为兼容保留，客户端永不发送）。
   - 响应成功：`{ ok:true, text, provider, model, elapsedMs }`
   - 响应失败：`{ ok:false, error:{ code, message, hint, details } }`
-- 模型解析优先级：请求指定的 provider/model → 插件 config → `ctx.agentDefaultModel.currentSelection()`。错误详情中会带上 Host **实际解析**到的模型，即使请求里没传。
+- 模型解析优先级：**输入框会话模型（请求）> `ctx.agentDefaultModel.currentSelection()` 兜底**。插件 config **不提供** `provider` / `model`，因此插件不可能指定自己的模型或凭据。错误详情中会带上 Host 实际使用的模型。
+- **凭据**：插件不持有任何 API Key，不读环境变量、不构造到模型服务的 HTTP 请求。它只调用 `ctx.llm.stream()`，由 Harness 已注册的 adapter 使用该 provider 对应的、用户自己配置的凭据。模型跟随输入框 ⇒ 凭据也跟随输入框。
 - 模型调用：`ctx.llm.stream({ provider, model, system, messages:[{role:'user',content:[{type:'text',text}]}], temperature, maxTokens, signal })`。
 - **推理等级**：默认完全不传。切换模型后残留的 `reasoningEffort`（如 `max`）会导致 `does not support reasoning effort`；只有插件 config 显式配置才传递，且模型拒绝时自动去掉后重试一次。
 - 不传 `tools`、不传历史、不传 session 日志；单轮补全。
@@ -168,11 +169,12 @@ idle --click--> loading --success--> done(before, after)
 | --- | --- | --- |
 | 替换方式 | 直接替换 + 回退快照 | 复刻 WorkBuddy 主交互，最少点击；原文始终可恢复 |
 | 触发 | 显式按钮 | 不在每次输入时调用，避免打扰与费用 |
-| 模型 | 当前会话模型，回退默认模型 | 与用户预期一致，避免另建模型配置 |
+| 模型 | 仅用输入框当前会话的模型；无选择时才回退 Harness 默认 | 模型与凭据都由用户在输入框决定；插件不自带模型与 API Key |
+| 推理等级 | 默认不传，只传 provider/model | 避免切换模型后残留等级导致不兼容 |
+| 凭据 | 插件零凭据，只调 `ctx.llm.stream()` | 由 Harness adapter 使用用户为该 provider 配置的凭据 |
 | 提示词 | 采用 `prompt-enhancer` 系统提示词 | 已针对「过度扩写」修补，且可移植 |
 | 文本范围 | 只替换文本 | 附件不动；引用 chip 可能展平（已在 README 说明） |
 | 错误 | 非阻塞 + 可重试 + 可读解释 | 绝不影响发送；失败保留原文；气泡说明原因、错误码、模型与处理建议 |
-| 模型选择 | Host 自己解析当前模型 | 避免客户端 projection 与 `agentDefaultModel` 不一致，也避免切换模型后带旧推理等级 |
 | 发布 | npm 包 + `dsh.bundle` + `dsh.client` | 与 DSH 插件市场安装方式一致 |
 
 ## 6. 失败与边界

@@ -34,8 +34,8 @@ npm view dsh-composer-prompt-optimizer
 
 ```bash
 npm pack --dry-run   # 只看清单
-npm pack             # 生成 dsh-composer-prompt-optimizer-0.1.1.tgz
-dsh plugin --profile desktop add /absolute/path/to/dsh-composer-prompt-optimizer-0.1.1.tgz
+npm pack             # 生成 dsh-composer-prompt-optimizer-0.1.2.tgz
+dsh plugin --profile desktop add /absolute/path/to/dsh-composer-prompt-optimizer-0.1.2.tgz
 ```
 
 ## 4. 发布到 npm
@@ -58,7 +58,7 @@ npm publish --access public
 1. 在 GitHub 建仓库，补 `repository`、`homepage`、`bugs` 字段。
 2. 准备：
    - 包名：`dsh-composer-prompt-optimizer`
-   - 版本：`0.1.1`
+   - 版本：`0.1.2`
    - 分类：`ui`（UI 增强）
    - 标题（中/英）和一句话描述
    - 真实运行截图（输入框按钮、优化前后、回退状态）

@@ -35,7 +35,7 @@ Or use the Plugin Manager's local-bundle install action. Restart Harness once af
 
 ```bash
 dsh plugin --profile desktop add dsh-composer-prompt-optimizer
-dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.1
+dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.2
 ```
 
 ## Use
@@ -74,12 +74,12 @@ Common codes: `rate_limited`, `unsupported_effort`, `unknown_model`, `unknown_pr
     temperature: 0.3      # 0–2, lower stays closer to the original intent
     maxTokens: 2048       # 256–8192; reasoning models need a larger budget
     timeoutMs: 60000      # 1s–300s
-    # provider: magpie
-    # model: xxx/yyy
     # reasoningEffort: high  # optional; omitted by default to stay compatible
 ```
 
-When `provider` / `model` are omitted, the Host reads the model you selected in the composer through `agentDefaultModel`. The plugin never forwards a stale `reasoningEffort` from a previous model selection — that was the cause of "model does not support reasoning effort" after switching models. Only an explicit config value is sent, and a model rejection is retried once without it.
+**The plugin has no `provider` / `model` setting and ships no API key.** It always uses the model selected for the composer's current session, and therefore the credential you already configured in Harness for that provider. It never reads environment variables or constructs a request to a model service. Only a session without a selection falls back to the Harness default model.
+
+The plugin never forwards a stale `reasoningEffort` from a previous model selection — that was the cause of "model does not support reasoning effort" after switching models. Only an explicit config value is sent, and a model rejection is retried once without it.
 
 ## Compatibility
 

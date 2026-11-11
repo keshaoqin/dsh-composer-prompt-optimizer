@@ -6,9 +6,9 @@
 
 | 项目 | 状态 | 地址 |
 | --- | --- | --- |
-| npm 包 `0.1.1` | 已发布，`latest` 指向 `0.1.1` | https://www.npmjs.com/package/dsh-composer-prompt-optimizer |
+| npm 包 `0.1.2` | 已发布，`latest` 指向 `0.1.2` | https://www.npmjs.com/package/dsh-composer-prompt-optimizer |
 | GitHub 仓库 | 公开，已加 `dsh-plugin` topic | https://github.com/keshaoqin/dsh-composer-prompt-optimizer |
-| GitHub Release / tarball | 已发布 `v0.1.1`（`v0.1.0` 为首发） | https://github.com/keshaoqin/dsh-composer-prompt-optimizer/releases/tag/v0.1.1 |
+| GitHub Release / tarball | 已发布 `v0.1.2`（`v0.1.0` 首发、`v0.1.1` 错误提示） | https://github.com/keshaoqin/dsh-composer-prompt-optimizer/releases/tag/v0.1.2 |
 | GitHub Actions CI | 已通过 | 语法检查 + 12 项测试 + `npm pack --dry-run` |
 | awesome-dsh-plugin 索引 | 待提交 PR | 见下方「社区索引」 |
 
@@ -18,7 +18,7 @@
 dsh plugin --profile desktop add dsh-composer-prompt-optimizer
 ```
 
-> 注：npm 上还有一个 `0.0.0-stage` 占位版本，是首次使用 stage-only token 时由 npm 自动生成的。它不影响 `latest`（`latest` = `0.1.1`），但 `npm unpublish` 需要账号的一次性密码（OTP）；带 Bypass 2FA 的 token 按 npm 安全策略不能执行 unpublish。可保留不动。`0.1.1` 修复了切换模型后的失败与错误提示问题，用户默认会安装到该版本。
+> 注：npm 上还有一个 `0.0.0-stage` 占位版本，是首次使用 stage-only token 时由 npm 自动生成的。它不影响 `latest`（`latest` = `0.1.2`），但 `npm unpublish` 需要账号的一次性密码（OTP）；带 Bypass 2FA 的 token 按 npm 安全策略不能执行 unpublish。可保留不动。`0.1.2` 起优化严格使用输入框当前会话模型，用户默认会安装到该版本。
 
 ## 1. npm 发布记录
 
@@ -46,11 +46,13 @@ npm pack --dry-run
 npm publish --access public
 ```
 
-`package.json` 已声明 `publishConfig.access = public`。账号开启 2FA 时，需使用带 **Bypass 2FA** 且权限为 **Read and write**（不是 stage only）的 Granular Access Token：
+`package.json` 已声明 `publishConfig.access = public`。账号开启 2FA 时，需使用带 **Bypass 2FA** 且权限为 **Read and write**（不是 stage only）的 Granular Access Token。下面只是命令模板，`<YOUR_TOKEN>` 是占位符；真实 token 只保存在本机 `~/.npm-publish-token`（权限 600），**绝不写进仓库或任何文档**：
 
 ```bash
-printf '%s' 'npm_...' > ~/.npm-publish-token
+printf '%s' '<YOUR_TOKEN>' > ~/.npm-publish-token
 chmod 600 ~/.npm-publish-token
+
+# 用临时 npm 配置发布，不修改 ~/.npmrc
 printf '//registry.npmjs.org/:_authToken=%s\n' "$(cat ~/.npm-publish-token)" > /tmp/npmrc
 chmod 600 /tmp/npmrc
 NPM_CONFIG_USERCONFIG=/tmp/npmrc npm publish --access public

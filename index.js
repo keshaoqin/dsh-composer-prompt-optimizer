@@ -92,14 +92,19 @@ export function normalizeConfig(config = {}) {
     temperature: numberInRange(config.temperature, 0.3, 0, 2),
     maxTokens: Math.round(numberInRange(config.maxTokens, 2048, 256, 8192)),
     timeoutMs: Math.round(numberInRange(config.timeoutMs, DEFAULT_TIMEOUT_MS, 1_000, 300_000)),
-    provider: optionalString(config.provider),
-    model: optionalString(config.model),
+    // No provider / model here on purpose: the plugin must never pick a model
+    // (and therefore a credential) of its own. The composer's session model is
+    // the only source of truth; config can only tune the rewrite request.
     reasoningEffort: optionalString(config.reasoningEffort),
     systemPrompt: optionalString(config.systemPrompt),
   }
 }
 
-/** Resolve the model route: request override > row config > Harness default. */
+/**
+ * Resolve the model route: the composer's session model (sent by the browser)
+ * wins; the Harness default is only a fallback for a session without a
+ * selection. Plugin config never overrides the user's model.
+ */
 export function resolveSelection(ctx, config, provider, model, reasoningEffort) {
   let fallback = {}
   try {
@@ -110,12 +115,10 @@ export function resolveSelection(ctx, config, provider, model, reasoningEffort) 
     /* A missing default is reported below. */
   }
   return {
-    provider: optionalString(provider) ?? config.provider ?? optionalString(fallback.provider),
-    model: optionalString(model) ?? config.model ?? optionalString(fallback.model),
+    provider: optionalString(provider) ?? optionalString(fallback.provider),
+    model: optionalString(model) ?? optionalString(fallback.model),
     reasoningEffort:
-      optionalString(reasoningEffort) ??
-      config.reasoningEffort ??
-      optionalString(fallback.reasoningEffort),
+      optionalString(reasoningEffort) ?? optionalString(fallback.reasoningEffort),
   }
 }
 
@@ -256,6 +259,12 @@ async function runStream(llm, config, selection, request, draft, maxTokens) {
 /**
  * Call the Harness LLM service once. The request contains only a system
  * message and the draft prompt; no tools, history, or session events.
+ *
+ * The plugin has no model and no credential of its own. The browser sends the
+ * provider/model selected in the composer's current session; the Host forwards
+ * exactly that to ctx.llm.stream(), whose adapter uses the credential the user
+ * already configured in Harness for that provider. Only a missing session
+ * selection falls back to the Harness default model.
  *
  * Reasoning effort is deliberately NOT forwarded from the request or the
  * Harness default selection: a rewrite task needs no high reasoning, and a

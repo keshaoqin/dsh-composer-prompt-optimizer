@@ -132,7 +132,7 @@ window.__ModuleLoader__.load({
       '.po-spin{animation:po-spin 1s linear infinite;}',
       '@keyframes po-spin{to{transform:rotate(360deg);}}',
 
-      '.po-popover{position:absolute;right:0;bottom:calc(100% + 10px);z-index:40;width:310px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:12px 13px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-overlay);box-shadow:0 10px 32px rgba(0,0,0,.16);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:12.5px;line-height:1.55;text-align:left;white-space:normal;}',
+      '.po-popover{position:absolute;right:0;bottom:calc(100% + 64px);z-index:40;width:310px;max-width:calc(100vw - 32px);box-sizing:border-box;padding:12px 13px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-overlay);box-shadow:0 10px 32px rgba(0,0,0,.16);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:12.5px;line-height:1.55;text-align:left;white-space:normal;}',
       '.po-popover:after{content:"";position:absolute;right:16px;bottom:-6px;width:10px;height:10px;transform:rotate(45deg);background:var(--dsw-alias-bg-overlay);border-right:1px solid var(--dsw-alias-border-l2);border-bottom:1px solid var(--dsw-alias-border-l2);}',
       '.po-pop-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;}',
       '.po-pop-badge{flex:0 0 auto;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in oklab,var(--dsw-alias-state-error-primary) 16%,transparent);color:var(--dsw-alias-state-error-primary);font-size:11px;font-weight:700;line-height:1;}',
@@ -251,6 +251,30 @@ window.__ModuleLoader__.load({
     function ErrorPopover(props) {
       const failure = props.failure;
       const t = props.t;
+      const rootRef = React.useRef(null);
+      const closeRef = React.useRef(props.onClose);
+      closeRef.current = props.onClose;
+
+      // The popover floats over the draft text. Close it as soon as the user
+      // clicks anywhere else (e.g. back into the editor) or presses Escape, so
+      // an error can never trap the composer.
+      React.useEffect(() => {
+        const onPointerDown = (event) => {
+          const root = rootRef.current;
+          if (root && root.contains(event.target)) return;
+          closeRef.current();
+        };
+        const onKeyDown = (event) => {
+          if (event.key === 'Escape') closeRef.current();
+        };
+        document.addEventListener('mousedown', onPointerDown, true);
+        document.addEventListener('keydown', onKeyDown, true);
+        return () => {
+          document.removeEventListener('mousedown', onPointerDown, true);
+          document.removeEventListener('keydown', onKeyDown, true);
+        };
+      }, []);
+
       const model = failure.details.provider
         ? failure.details.provider + '/' + (failure.details.model || '?')
         : (failure.details.model || '');
@@ -261,7 +285,7 @@ window.__ModuleLoader__.load({
       if (failure.details.finishReason) {
         extra.push('finish: ' + failure.details.finishReason);
       }
-      return h('div', { className: 'po-popover', role: 'alert', 'aria-live': 'assertive' },
+      return h('div', { ref: rootRef, className: 'po-popover', role: 'alert', 'aria-live': 'assertive' },
         h('div', { className: 'po-pop-head' },
           h('span', { className: 'po-pop-badge' }, '!'),
           h('span', { className: 'po-pop-title' }, failure.title),
@@ -287,9 +311,22 @@ window.__ModuleLoader__.load({
     function PromptOptimizerButton(props) {
       const useInput = props.useInput;
       const inputActions = props.inputActions;
+      const useProjection = props.useProjection;
       const t = typeof props.t === 'function' ? props.t : fallbackT;
 
       const input = useInput((state) => state) || { draft: '', phase: 'plain', draftRev: -1 };
+      // The model selected for this composer session. Blank sessions without an
+      // explicit selection have no projection value; the Host then falls back
+      // to the Harness default model — which is the model the composer shows.
+      let projection;
+      try {
+        projection = typeof useProjection === 'function'
+          ? useProjection('modelSelection', (value) => value)
+          : undefined;
+      } catch {
+        projection = undefined;
+      }
+      const selected = projection && (projection.next || projection.lastUsed);
       const [state, setState] = React.useState({ status: 'idle' });
       const controllerRef = React.useRef(null);
       const inputRef = React.useRef(input);
@@ -348,13 +385,19 @@ window.__ModuleLoader__.load({
         }, 60_000);
 
         try {
-          // The Host resolves the current model itself via agentDefaultModel.
-          // Sending a stale projection-shaped model/effort here is what used to
-          // break optimization right after the user switched models.
+          // Send only the model the user selected in this composer session.
+          // reasoningEffort is intentionally omitted: a stale level from a
+          // previous model used to break optimization right after a switch.
+          // The plugin carries no API key; ctx.llm.stream() uses the Harness
+          // adapter/credential already bound to that provider.
           const response = await fetch('/prompt-optimizer/api/enhance', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ text: draft }),
+            body: JSON.stringify({
+              text: draft,
+              ...(selected && selected.provider ? { provider: selected.provider } : {}),
+              ...(selected && selected.model ? { model: selected.model } : {}),
+            }),
             signal: controller.signal,
           });
           const data = await response.json().catch(() => null);

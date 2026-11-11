@@ -1,6 +1,6 @@
 {
   "name": "dsh-composer-prompt-optimizer",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "在 DeepSeek Harness 输入框中常驻一个提示词优化按钮：一键改写草稿、保留原文快照并可回退。A resident prompt-optimization button for the DeepSeek Harness composer with one-click rewrite and revert.",
   "keywords": [
     "dsh",

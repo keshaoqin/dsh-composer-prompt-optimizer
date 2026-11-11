@@ -5,5 +5,5 @@
       name: 'dsh-composer-prompt-optimizer'
       config:
         temperature: 0.3
-        maxTokens: 1024
+        maxTokens: 2048
         timeoutMs: 60000

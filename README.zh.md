@@ -37,7 +37,7 @@ dsh plugin --profile desktop add /绝对路径/dsh-composer-prompt-optimizer
 ```bash
 dsh plugin --profile desktop add dsh-composer-prompt-optimizer
 # 指定版本
-dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.1
+dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.2
 ```
 
 ## 使用
@@ -92,12 +92,12 @@ dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.1
     temperature: 0.3      # 0–2，低温度更贴近原意
     maxTokens: 2048       # 256–8192，推理模型需要更多输出预算
     timeoutMs: 60000      # 1s–300s
-    # provider: magpie    # 可选：覆盖默认 provider
-    # model: xxx/yyy     # 可选：覆盖默认 model
     # reasoningEffort: high  # 可选；默认不传，避免与模型不兼容
 ```
 
-默认不写 `provider` / `model` 时，Host 通过 `agentDefaultModel` 读取你当前在输入框选择的模型。插件**不会**把旧的推理等级转发给模型：切换模型后残留的 `reasoningEffort` 曾导致「does not support reasoning effort」错误，现在只有显式配置该项时才会传递，且模型拒绝时会自动去掉后重试。
+**插件不提供也不允许配置 `provider` / `model`**：优化始终使用你在输入框当前会话选择的模型，因此也始终使用该模型对应的、你已在 Harness 里配置好的凭据。插件自身不持有任何 API Key，也不读取环境变量。仅当会话没有模型选择时，才回退到 Harness 的默认模型。
+
+推理等级默认完全不传：切换模型后残留的 `reasoningEffort` 曾导致「does not support reasoning effort」错误；现在只有显式配置该项时才会传递，且模型拒绝时会自动去掉后重试。
 
 ## 兼容性
 

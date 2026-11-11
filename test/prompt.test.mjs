@@ -54,18 +54,20 @@ test('normalizeConfig applies defaults and clamps ranges', () => {
     temperature: 0.3,
     maxTokens: 2048,
     timeoutMs: 60_000,
-    provider: undefined,
-    model: undefined,
     reasoningEffort: undefined,
     systemPrompt: undefined,
   })
+  // A plugin config must never be able to pin a model (and therefore a
+  // credential) that differs from the one selected in the composer.
+  assert.equal('provider' in normalizeConfig({ provider: 'p', model: 'm' }), false)
+  assert.equal('model' in normalizeConfig({ provider: 'p', model: 'm' }), false)
   const clamped = normalizeConfig({ temperature: 9, maxTokens: 100_000, timeoutMs: 1 })
   assert.equal(clamped.temperature, 2)
   assert.equal(clamped.maxTokens, 8192)
   assert.equal(clamped.timeoutMs, 1000)
 })
 
-test('resolveSelection prefers request override, then config, then default', () => {
+test('resolveSelection uses the composer session model and never plugin config', () => {
   const ctx = {
     get(name) {
       if (name === 'agentDefaultModel') {
@@ -75,17 +77,13 @@ test('resolveSelection prefers request override, then config, then default', () 
     },
   }
   const config = normalizeConfig({ provider: 'config-provider', model: 'config-model' })
-  assert.deepEqual(resolveSelection(ctx, config, 'request-provider', 'request-model'), {
-    provider: 'request-provider',
-    model: 'request-model',
+  assert.deepEqual(resolveSelection(ctx, config, 'session-provider', 'session-model'), {
+    provider: 'session-provider',
+    model: 'session-model',
     reasoningEffort: undefined,
   })
+  // No session selection: only then is the Harness default used, never config.
   assert.deepEqual(resolveSelection(ctx, config), {
-    provider: 'config-provider',
-    model: 'config-model',
-    reasoningEffort: undefined,
-  })
-  assert.deepEqual(resolveSelection(ctx, normalizeConfig({})), {
     provider: 'default-provider',
     model: 'default-model',
     reasoningEffort: undefined,
