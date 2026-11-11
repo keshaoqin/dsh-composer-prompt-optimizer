@@ -6,9 +6,9 @@
 
 | 项目 | 状态 | 地址 |
 | --- | --- | --- |
-| npm 包 `0.1.0` | 已发布，`latest` 指向 `0.1.0` | https://www.npmjs.com/package/dsh-composer-prompt-optimizer |
+| npm 包 `0.1.1` | 已发布，`latest` 指向 `0.1.1` | https://www.npmjs.com/package/dsh-composer-prompt-optimizer |
 | GitHub 仓库 | 公开，已加 `dsh-plugin` topic | https://github.com/keshaoqin/dsh-composer-prompt-optimizer |
-| GitHub Release / tarball | 已发布 `v0.1.0` | https://github.com/keshaoqin/dsh-composer-prompt-optimizer/releases/tag/v0.1.0 |
+| GitHub Release / tarball | 已发布 `v0.1.1`（`v0.1.0` 为首发） | https://github.com/keshaoqin/dsh-composer-prompt-optimizer/releases/tag/v0.1.1 |
 | GitHub Actions CI | 已通过 | 语法检查 + 12 项测试 + `npm pack --dry-run` |
 | awesome-dsh-plugin 索引 | 待提交 PR | 见下方「社区索引」 |
 
@@ -18,7 +18,7 @@
 dsh plugin --profile desktop add dsh-composer-prompt-optimizer
 ```
 
-> 注：npm 上还有一个 `0.0.0-stage` 占位版本，是首次使用 stage-only token 时由 npm 自动生成的。它不影响 `latest`（`latest` = `0.1.0`），但 `npm unpublish` 需要账号的一次性密码（OTP）；带 Bypass 2FA 的 token 按 npm 安全策略不能执行 unpublish。可保留不动。
+> 注：npm 上还有一个 `0.0.0-stage` 占位版本，是首次使用 stage-only token 时由 npm 自动生成的。它不影响 `latest`（`latest` = `0.1.1`），但 `npm unpublish` 需要账号的一次性密码（OTP）；带 Bypass 2FA 的 token 按 npm 安全策略不能执行 unpublish。可保留不动。`0.1.1` 修复了切换模型后的失败与错误提示问题，用户默认会安装到该版本。
 
 ## 1. npm 发布记录
 
