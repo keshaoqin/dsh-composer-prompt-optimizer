@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Prompt Optimizer">
+  <defs>
+    <linearGradient id="po-bg" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="po-spark" x1="22" y1="18" x2="42" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DBEAFE"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#po-bg)"/>
+  <path d="M31 16l3.2 8.8L43 28l-8.8 3.2L31 40l-3.2-8.8L19 28l8.8-3.2L31 16Z" fill="url(#po-spark)"/>
+  <path d="M44 36l1.7 4.6 4.6 1.7-4.6 1.7L44 48.6l-1.7-4.6-4.6-1.7 4.6-1.7L44 36Z" fill="#FFFFFF" opacity=".75"/>
+  <path d="M17.5 38.5a10.5 10.5 0 1 0 3.2-7.4" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+  <path d="M17.5 31.5v7h7" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+</svg>

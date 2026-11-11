@@ -1,0 +1,9 @@
+# dsh-composer-prompt-optimizer bundle layer.
+# The dsh plugin manager reads this patch when the bundle is installed.
+- insert:
+    - id: prompt-optimizer
+      name: 'dsh-composer-prompt-optimizer'
+      config:
+        temperature: 0.3
+        maxTokens: 1024
+        timeoutMs: 60000

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Prompt Optimizer",
+    "description": "A resident optimize/revert button in the composer that rewrites your draft prompt with a fast model while preserving intent and language."
+  }
+}
