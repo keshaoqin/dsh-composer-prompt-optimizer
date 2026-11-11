@@ -1,0 +1,17 @@
+# Community marketplace entry (awesome-dsh-plugin, format-1 YAML)
+#
+# Submit this file as a PR to LingHXiao/awesome-dsh-plugin:
+#   data/plugins/keshaoqin__dsh-composer-prompt-optimizer.yml
+#
+# IMPORTANT: that index requires the repo to be at least 1 day old.
+# Repository created: 2026-11-11T03:41:17Z (11:41 Asia/Shanghai).
+# Earliest valid PR: after 2026-11-12 11:41 Asia/Shanghai.
+#
+# The READMEs in that repo are generated; do not edit them by hand.
+
+url: https://github.com/keshaoqin/dsh-composer-prompt-optimizer
+name: keshaoqin/dsh-composer-prompt-optimizer
+category: ui
+description:
+  en: Adds a resident Optimize prompt / Revert button to the DSH composer, rewriting the draft with the current model while preserving intent and language.
+  zh: 在 DSH 输入框常驻「优化提示词 / 回退原文」按钮，用当前模型改写草稿并保持原意与语言。

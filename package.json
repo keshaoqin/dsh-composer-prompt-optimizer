@@ -44,6 +44,7 @@
     "icon.svg",
     "docs/DESIGN.md",
     "docs/MARKETPLACE.md",
+    "docs/marketplace-entry.yml",
     "docs/*.png"
   ],
   "dsh": {

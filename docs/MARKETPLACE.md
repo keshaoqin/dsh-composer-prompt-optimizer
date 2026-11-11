@@ -1,67 +1,106 @@
 # 公开市场发布资料
 
-本插件采用 DeepSeek Harness 的标准 bundle 形态：npm 包 + `dsh.bundle.patch` + `dsh.client`。发布 npm 包后，DSH 用户可以用 `dsh plugin --profile <profile> add dsh-composer-prompt-optimizer` 安装；社区索引（如 awesome-dsh-plugin / dsh-plugin-catalog）可收录它的条目。
+本插件采用 DeepSeek Harness 的标准 bundle 形态：npm 包 + `dsh.bundle.patch` + `dsh.client`。
 
-## 1. 发布 npm 包
+## 当前发布状态（2026-11-11）
+
+| 项目 | 状态 | 地址 |
+| --- | --- | --- |
+| npm 包 `0.1.0` | 已发布，`latest` 指向 `0.1.0` | https://www.npmjs.com/package/dsh-composer-prompt-optimizer |
+| GitHub 仓库 | 公开，已加 `dsh-plugin` topic | https://github.com/keshaoqin/dsh-composer-prompt-optimizer |
+| GitHub Release / tarball | 已发布 `v0.1.0` | https://github.com/keshaoqin/dsh-composer-prompt-optimizer/releases/tag/v0.1.0 |
+| GitHub Actions CI | 已通过 | 语法检查 + 12 项测试 + `npm pack --dry-run` |
+| awesome-dsh-plugin 索引 | 待提交 PR | 见下方「社区索引」 |
+
+安装命令（发布后）：
+
+```bash
+dsh plugin --profile desktop add dsh-composer-prompt-optimizer
+```
+
+> 注：npm 上还有一个 `0.0.0-stage` 占位版本，是首次使用 stage-only token 时由 npm 自动生成的。它不影响 `latest`（`latest` = `0.1.0`），但 `npm unpublish` 需要账号的一次性密码（OTP）；带 Bypass 2FA 的 token 按 npm 安全策略不能执行 unpublish。可保留不动。
+
+## 1. npm 发布记录
+
+发布使用的账号：`muxiaoke`。作者、仓库、主页已写入 `package.json`：
+
+```json
+{
+  "author": "muxiaoke",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keshaoqin/dsh-composer-prompt-optimizer.git"
+  },
+  "homepage": "https://github.com/keshaoqin/dsh-composer-prompt-optimizer",
+  "bugs": {
+    "url": "https://github.com/keshaoqin/dsh-composer-prompt-optimizer/issues"
+  }
+}
+```
+
+发布命令（供后续版本复用）：
 
 ```bash
 cd dsh-composer-prompt-optimizer
-npm whoami
 npm pack --dry-run
-npm publish
+npm publish --access public
 ```
 
-发布前请把 `package.json` 里的作者、仓库、主页补成你的真实信息：
+`package.json` 已声明 `publishConfig.access = public`。账号开启 2FA 时，需使用带 **Bypass 2FA** 且权限为 **Read and write**（不是 stage only）的 Granular Access Token：
 
-```json
-{
-  "author": "your-name",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/your-name/dsh-composer-prompt-optimizer.git"
-  },
-  "homepage": "https://github.com/your-name/dsh-composer-prompt-optimizer"
-}
+```bash
+printf '%s' 'npm_...' > ~/.npm-publish-token
+chmod 600 ~/.npm-publish-token
+printf '//registry.npmjs.org/:_authToken=%s\n' "$(cat ~/.npm-publish-token)" > /tmp/npmrc
+chmod 600 /tmp/npmrc
+NPM_CONFIG_USERCONFIG=/tmp/npmrc npm publish --access public
+rm -f /tmp/npmrc
 ```
 
-## 2. 社区索引条目模板（format-1）
+## 2. 社区索引（awesome-dsh-plugin）
 
-向 awesome-dsh-plugin 等索引提交 PR/issue 时，使用下面这条（把 URL/作者替换成你的）：
+该索引的 README 由脚本生成，**不要手改 README**；投稿只需新增一个文件：
 
-```json
-{
-  "name": "dsh-composer-prompt-optimizer",
-  "title": "your-name/dsh-composer-prompt-optimizer",
-  "description": {
-    "en": "A resident Optimize prompt / Revert button in the DSH composer. One click rewrites your draft with the current model while preserving intent and language; the original stays restorable.",
-    "zh": "DSH 输入框常驻「优化提示词 / 回退原文」按钮：一键用当前模型改写草稿，保持原意与语言，原文随时可恢复。"
-  },
-  "homepage": "https://awesome-dsh-plugin.com/p/your-name/dsh-composer-prompt-optimizer/",
-  "repository": {
-    "url": "https://github.com/your-name/dsh-composer-prompt-optimizer"
-  },
-  "metadata": {
-    "category": "ui",
-    "keywords": ["prompt", "prompt-optimizer", "composer", "ui"],
-    "labels": ["prompt", "composer"]
-  },
-  "versions": [
-    {
-      "version": "0.1.0",
-      "publishTimestamp": 0,
-      "source": { "type": "npm" },
-      "engines": { "dsh": ">=0.2.0-rc.2" }
-    }
-  ]
-}
+`data/plugins/keshaoqin__dsh-composer-prompt-optimizer.yml`
+
+内容已准备好：[marketplace-entry.yml](marketplace-entry.yml)：
+
+```yaml
+url: https://github.com/keshaoqin/dsh-composer-prompt-optimizer
+name: keshaoqin/dsh-composer-prompt-optimizer
+category: ui
+description:
+  en: Adds a resident Optimize prompt / Revert button to the DSH composer, rewriting the draft with the current model while preserving intent and language.
+  zh: 在 DSH 输入框常驻「优化提示词 / 回退原文」按钮，用当前模型改写草稿并保持原意与语言。
 ```
 
-> `publishTimestamp` 由索引方或脚本按 npm 发布时间填写；手动提交时留 0 或按索引说明填 Unix 秒。
+提交步骤：
+
+1. Fork `LingHXiao/awesome-dsh-plugin`；
+2. 新建分支，把上面这一个 YAML 文件放到 `data/plugins/`；
+3. 提交 PR（一个 PR 最多 3 条，这里只有 1 条）；
+4. 维护者人工审核后会合并，README 自动生成。
+
+### 硬性限制：仓库需创建满 1 天
+
+仓库创建于 `2026-11-11T03:41:17Z`（北京时间 11:41）。索引的 CI 会自动拒绝创建不足 1 天的仓库，因此：
+
+> **最早可提交 PR 的时间：2026-11-12 11:41（Asia/Shanghai）之后。**
+
+其他已满足的要求：
+
+- `package.json` 声明 `dsh.bundle.patch` + `cordis.patch.yml` ✅
+- 真实可运行代码（非占位/纯 README 仓库）✅
+- 已发布到 npm（预构建安装，免 `allowBuilds`）✅
+- 仓库已添加 `dsh-plugin` topic ✅
+- 描述只陈述功能、无营销词、以句号结尾 ✅
+- 未依赖任何第三方插件副本 ✅
+
+贡献指南：https://github.com/LingHXiao/awesome-dsh-plugin/blob/main/contributing.md
 
 ## 3. 市场展示素材
 
 - 标题：提示词优化 / Prompt Optimizer
-- 一句话：输入框里的提示词改写按钮，优化后可一键回退。
 - 分类：UI 增强（`ui`）
 - 截图：
   - `docs/screenshot-composer.png`
@@ -69,7 +108,7 @@ npm publish
 - 最低 DSH 版本：`>= 0.2.0-rc.2`
 - 平台：Web（桌面端 / Web GUI）
 
-## 4. 安全声明（提交时附上）
+## 4. 安全声明（提交 PR 时附上）
 
 - 不收集数据、不上传用户内容。
 - 仅通过本地 Harness 路由 `/prompt-optimizer/api/*` 与 Harness 的 `ctx.llm.stream()` 调用用户已配置的模型服务。
@@ -78,6 +117,7 @@ npm publish
 ## 5. 发布后验证
 
 ```bash
+npm view dsh-composer-prompt-optimizer version
 dsh plugin --profile desktop add dsh-composer-prompt-optimizer@latest
 ```
 
