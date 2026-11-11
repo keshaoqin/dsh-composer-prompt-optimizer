@@ -14,7 +14,9 @@ The plugin is based on the `outputs/` reverse-engineering of WorkBuddy 5.7.7's "
 - **One-click optimization**: reads the draft and calls `ctx.llm.stream()` in a single-turn, tool-free, low-temperature request.
 - **One-click revert**: keeps a `before` snapshot and restores it from the button.
 - **Manual-edit protection**: if you edit the draft after optimizing, the snapshot is discarded so revert can never overwrite new input.
-- **Cancellation and soft failure**: cancel an in-flight request; timeout or provider failures keep the original draft and show a retry state.
+- **Cancellation and soft failure**: cancel an in-flight request; failures keep the original draft and show a retry state.
+- **Readable failures**: a localized popover explains the cause, gives an actionable hint, and shows the error code, the model used and expandable technical details.
+- **Automatic recovery**: a stale reasoning level is never forwarded after a model switch; a truncated output is retried once with a larger token budget.
 - **Language preserving**: Chinese in / Chinese out, English in / English out, mixed input keeps a natural mix, and no language labels are emitted.
 - **Never executes the task**: it sharpens the ask, never answers it.
 - **Text-only replacement**: attachments stay in the attachment rail; only the text draft is rewritten.
@@ -33,7 +35,7 @@ Or use the Plugin Manager's local-bundle install action. Restart Harness once af
 
 ```bash
 dsh plugin --profile desktop add dsh-composer-prompt-optimizer
-dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.0
+dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.1
 ```
 
 ## Use
@@ -51,6 +53,18 @@ dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.0
 | Optimized | Revert | Restore the original draft |
 | Error | Retry | Try again |
 
+### Failures explain themselves
+
+A failed optimization does not just say "Retry". A popover above the button shows:
+
+- a **cause** (e.g. "Model rate limit reached", "Reasoning level incompatible", "Model unavailable", "Optimization timed out");
+- an **actionable hint** (e.g. "Switch to another model in the composer, or wait for the quota to reset");
+- the **error code and the model used**;
+- expandable **technical details** with the raw provider error;
+- **Retry / Close** actions.
+
+Common codes: `rate_limited`, `unsupported_effort`, `unknown_model`, `unknown_provider`, `auth_failed`, `empty_result`, `output_truncated`, `timeout`, `no_model`, `unavailable`, `network`.
+
 ## Configuration
 
 ```yaml
@@ -58,13 +72,14 @@ dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.0
   name: 'dsh-composer-prompt-optimizer'
   config:
     temperature: 0.3      # 0–2, lower stays closer to the original intent
-    maxTokens: 1024       # 64–8192
+    maxTokens: 2048       # 256–8192; reasoning models need a larger budget
     timeoutMs: 60000      # 1s–300s
-    # provider: deepseek
-    # model: deepseek-chat
+    # provider: magpie
+    # model: xxx/yyy
+    # reasoningEffort: high  # optional; omitted by default to stay compatible
 ```
 
-When `provider` / `model` are omitted, the current session model is preferred; the Harness `agentDefaultModel` is used as a fallback.
+When `provider` / `model` are omitted, the Host reads the model you selected in the composer through `agentDefaultModel`. The plugin never forwards a stale `reasoningEffort` from a previous model selection — that was the cause of "model does not support reasoning effort" after switching models. Only an explicit config value is sent, and a model rejection is retried once without it.
 
 ## Compatibility
 

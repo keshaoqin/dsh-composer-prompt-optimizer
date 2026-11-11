@@ -14,7 +14,9 @@
 - **一键优化**：读取当前草稿，调用 Harness 的 `ctx.llm.stream()`，单轮、无工具、低温度改写。
 - **一键回退**：优化成功后保存 `before` 快照；点击「回退原文」恢复。
 - **手动编辑保护**：优化后如果你继续改草稿，快照自动失效，不会覆盖你的新输入。
-- **取消与失败兜底**：请求中可点击「取消优化」；超时、模型错误或服务不可用时保留原文并显示可重试状态。
+- **取消与失败兜底**：请求中可点击「取消优化」；失败时原文始终保留，按钮变为「重试」。
+- **可读的错误提示**：失败时弹出提示气泡，说明原因、给出可操作建议，并显示错误码、当前模型与可展开的技术详情。
+- **自动容错**：切换模型后不会带上旧的推理等级；模型输出被长度上限截断时自动加大预算重试一次。
 - **语言一致**：中文进中文出、英文进英文出，混合语言保持自然混合；不会输出语言标签。
 - **不执行任务**：只改写提示词，不回答提示词里的问题，也不替用户做任务。
 - **仅替换文本**：附件（图片/文件）保留在输入框的附件区；优化的是文本草稿。
@@ -35,7 +37,7 @@ dsh plugin --profile desktop add /绝对路径/dsh-composer-prompt-optimizer
 ```bash
 dsh plugin --profile desktop add dsh-composer-prompt-optimizer
 # 指定版本
-dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.0
+dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.1
 ```
 
 ## 使用
@@ -53,7 +55,31 @@ dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.0
 | 空闲 | 优化提示词 | 开始优化 |
 | 请求中 | 取消优化（转圈） | 中止请求，恢复原文 |
 | 已优化 | 回退原文 | 恢复优化前的草稿 |
-| 失败 | 重试 | 重新发起优化 |
+| 失败 | 重试 | 重新发起优化；同时显示错误原因与建议 |
+
+### 失败时会告诉你原因
+
+优化失败不会只显示「重试」。按钮上方会弹出一个提示气泡，包含：
+
+- **原因标题**：例如「模型调用被限流」「推理等级不兼容」「模型不可用」「优化超时」；
+- **处理建议**：例如「请在输入框切换其他模型，或等待配额重置后再试」；
+- **错误码与当前模型**：便于判断是哪个模型出了问题；
+- **技术详情**（可展开）：服务端返回的原始错误，便于反馈问题；
+- **重试 / 关闭** 按钮。
+
+常见错误码：
+
+| 错误码 | 含义 | 建议 |
+| --- | --- | --- |
+| `rate_limited` | 模型触发频率/配额限制 | 切换其他模型或等待配额重置 |
+| `unsupported_effort` | 模型不支持所选推理等级 | 插件自动以默认等级重试；仍失败则切换模型 |
+| `unknown_model` / `unknown_provider` | 模型或模型服务未配置 | 切换可用模型、检查 Harness 模型设置 |
+| `auth_failed` | 模型鉴权失败 | 检查 API Key / 账号登录状态 |
+| `empty_result` | 模型只输出推理或空内容 | 切换模型 |
+| `output_truncated` | 输出被长度上限截断 | 缩短草稿；插件会自动加大预算重试一次 |
+| `timeout` | 请求超时 | 重试、缩短草稿或换更快的模型 |
+| `no_model` | 未选择模型 | 先在输入框选择模型 |
+| `unavailable` / `network` | 优化服务不可用 | 确认插件已启用、刷新页面或重启 Harness |
 
 ## 配置
 
@@ -64,13 +90,14 @@ dsh plugin --profile desktop add dsh-composer-prompt-optimizer@0.1.0
   name: 'dsh-composer-prompt-optimizer'
   config:
     temperature: 0.3      # 0–2，低温度更贴近原意
-    maxTokens: 1024       # 64–8192
+    maxTokens: 2048       # 256–8192，推理模型需要更多输出预算
     timeoutMs: 60000      # 1s–300s
-    # provider: deepseek  # 可选：覆盖默认 provider
-    # model: deepseek-chat# 可选：覆盖默认 model
+    # provider: magpie    # 可选：覆盖默认 provider
+    # model: xxx/yyy     # 可选：覆盖默认 model
+    # reasoningEffort: high  # 可选；默认不传，避免与模型不兼容
 ```
 
-默认不写 `provider` / `model` 时，优先使用当前会话的模型选择；如果取不到，再使用 Harness 的 `agentDefaultModel`。
+默认不写 `provider` / `model` 时，Host 通过 `agentDefaultModel` 读取你当前在输入框选择的模型。插件**不会**把旧的推理等级转发给模型：切换模型后残留的 `reasoningEffort` 曾导致「does not support reasoning effort」错误，现在只有显式配置该项时才会传递，且模型拒绝时会自动去掉后重试。
 
 ## 兼容性
 

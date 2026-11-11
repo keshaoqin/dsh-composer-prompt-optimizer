@@ -136,14 +136,17 @@ idle --click--> loading --success--> done(before, after)
 - 路由前缀：`/prompt-optimizer/api`。
 - `GET /health`：返回插件版本、是否有 `llm`、当前解析到的模型。用于调试和安装后自检。
 - `POST /enhance`：
-  - 请求：`{ text, provider?, model?, reasoningEffort? }`
+  - 请求：`{ text }`（`provider` / `model` / `reasoningEffort` 仅为兼容保留，客户端不再发送）。
   - 响应成功：`{ ok:true, text, provider, model, elapsedMs }`
-  - 响应失败：`{ ok:false, error:{ code, message } }`
-- 模型解析优先级：请求指定的 provider/model → 插件 config → `ctx.agentDefaultModel.currentSelection()`。
+  - 响应失败：`{ ok:false, error:{ code, message, hint, details } }`
+- 模型解析优先级：请求指定的 provider/model → 插件 config → `ctx.agentDefaultModel.currentSelection()`。错误详情中会带上 Host **实际解析**到的模型，即使请求里没传。
 - 模型调用：`ctx.llm.stream({ provider, model, system, messages:[{role:'user',content:[{type:'text',text}]}], temperature, maxTokens, signal })`。
+- **推理等级**：默认完全不传。切换模型后残留的 `reasoningEffort`（如 `max`）会导致 `does not support reasoning effort`；只有插件 config 显式配置才传递，且模型拒绝时自动去掉后重试一次。
 - 不传 `tools`、不传历史、不传 session 日志；单轮补全。
 - 输出清洗：去零宽/BOM → trim → 去成对包裹引号 → 去包裹代码围栏 → 空结果视为 `empty_result`。
-- 错误码：`empty_input`、`input_too_long`、`bad_request`、`unavailable`、`no_model`、`timeout`、`model_error`、`empty_result`、`cancelled`、`unknown`。
+- 输出预算：默认 `maxTokens = 2048`。推理模型可能把预算全花在隐藏推理上；遇到 `max-tokens` 结束时自动以翻倍预算（上限 8192）重试一次，仍失败才返回 `output_truncated`。
+- 错误码：`empty_input`、`input_too_long`、`bad_request`、`not_found`、`unavailable`、`no_model`、`rate_limited`、`unsupported_effort`、`unknown_model`、`unknown_provider`、`auth_failed`、`output_truncated`、`timeout`、`model_error`、`empty_result`、`cancelled`、`unknown`；客户端另有 `network`。每个码都有对应的本地化标题、可操作建议与 HTTP 状态。
+- 错误分类：`classifyFailure()` 对 provider 的自由文本错误（429 JSON、`no adapter registered`、`has no configured model` 等）做模式匹配，映射为稳定码，并附带 `hint` 与 `details`（provider/model/reasoning 字符数/finish reason/原始错误）。
 - 超时：默认 60s，可配置；请求关闭时 abort 模型流。
 
 ### 4.3 提示词
@@ -168,19 +171,25 @@ idle --click--> loading --success--> done(before, after)
 | 模型 | 当前会话模型，回退默认模型 | 与用户预期一致，避免另建模型配置 |
 | 提示词 | 采用 `prompt-enhancer` 系统提示词 | 已针对「过度扩写」修补，且可移植 |
 | 文本范围 | 只替换文本 | 附件不动；引用 chip 可能展平（已在 README 说明） |
-| 错误 | 非阻塞 + 可重试 | 绝不影响发送；失败保留原文 |
+| 错误 | 非阻塞 + 可重试 + 可读解释 | 绝不影响发送；失败保留原文；气泡说明原因、错误码、模型与处理建议 |
+| 模型选择 | Host 自己解析当前模型 | 避免客户端 projection 与 `agentDefaultModel` 不一致，也避免切换模型后带旧推理等级 |
 | 发布 | npm 包 + `dsh.bundle` + `dsh.client` | 与 DSH 插件市场安装方式一致 |
 
 ## 6. 失败与边界
 
 1. **空草稿**：按钮禁用；若通过代码触发，返回 `empty_input`。
-2. **模型未配置**：返回 `no_model`，按钮显示重试与提示。
-3. **超时**：Host 60s abort，返回 504 `timeout`；客户端显示「优化超时，请重试」。
-4. **用户取消**：客户端 abort fetch；Host 检测 res close 后 abort 模型流；原文不变。
-5. **用户手动编辑**：`loading` 或 `done` 状态都会检测并丢弃快照；不会覆盖新内容。
-6. **多会话切换**：slot 是 session scope；组件卸载时 abort；不同会话状态不串。
-7. **输入很长**：Host 限制 30,000 字符，避免一次请求过大；超限返回 `input_too_long`。
-8. **非 plain 阶段**：输入框正在发送/锁定时禁用按钮。
+2. **模型未配置**：返回 `no_model`，气泡提示先选择模型。
+3. **限流 / 配额**：返回 `rate_limited`（HTTP 429），气泡提示切换模型或等待配额重置，并显示实际使用的模型。
+4. **切换模型后的推理等级冲突**：不转发旧 `reasoningEffort`；若 config 显式指定且模型拒绝，自动去掉等级重试一次。
+5. **模型/服务不可用**：`unknown_model` / `unknown_provider` / `auth_failed` 分别给出对应的排查建议。
+6. **推理模型只输出推理**：`empty_result` 或 `max-tokens` 截断；后者自动翻倍预算重试一次，仍失败返回 `output_truncated` 并建议缩短草稿。
+7. **超时**：Host 60s abort，返回 504 `timeout`；气泡显示「优化超时」与建议。
+8. **用户取消**：客户端 abort fetch；Host 检测 res close 后 abort 模型流；原文不变。
+9. **用户手动编辑**：`loading` 或 `done` 状态都会检测并丢弃快照；不会覆盖新内容。
+10. **多会话切换**：slot 是 session scope；组件卸载时 abort；不同会话状态不串。
+11. **输入很长**：Host 限制 30,000 字符，避免一次请求过大；超限返回 `input_too_long`。
+12. **非 plain 阶段**：输入框正在发送/锁定时禁用按钮。
+13. **网络断开 / 插件未启用**：客户端把 fetch 异常归为 `network`，提示刷新页面或确认插件已启用。
 
 ## 7. 测试计划
 
@@ -189,6 +198,9 @@ idle --click--> loading --success--> done(before, after)
 - `cleanInput`：去零宽、trim、空输入、超长输入。
 - `cleanOutput`：去引号、去代码围栏、空结果抛错、正常文本不变。
 - `normalizeConfig`：默认值、范围钳制。
+- `resolveSelection`：请求覆盖、config 覆盖、默认值回退。
+- `classifyFailure`：429 限流、推理等级不兼容、未知模型/服务、鉴权、截断，以及所有错误码都有 hint。
+- `ERROR_HINTS` 覆盖：每个错误码都存在可操作建议。
 - `resolveSelection`：请求覆盖、config 覆盖、默认值回退。
 
 ### 7.2 Host 集成
