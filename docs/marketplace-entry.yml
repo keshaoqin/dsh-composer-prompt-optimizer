@@ -1,17 +1,15 @@
-# Community marketplace entry (awesome-dsh-plugin, format-1 YAML)
+# awesome-dsh-plugin entry (format-1, one YAML file per plugin).
 #
-# Submit this file as a PR to LingHXiao/awesome-dsh-plugin:
+# Submit as a PR to LingHXiao/awesome-dsh-plugin:
 #   data/plugins/keshaoqin__dsh-composer-prompt-optimizer.yml
 #
-# IMPORTANT: that index requires the repo to be at least 1 day old.
-# Repository created: 2026-11-11T03:41:17Z (11:41 Asia/Shanghai).
-# Earliest valid PR: after 2026-11-12 11:41 Asia/Shanghai.
-#
-# The READMEs in that repo are generated; do not edit them by hand.
+# The READMEs in that repo are generated from data/plugins/*.yml — never edit them by hand.
+# Repository age gate: the repo must be >= 1 day old (created 2026-11-11T03:41:17Z).
 
 url: https://github.com/keshaoqin/dsh-composer-prompt-optimizer
 name: keshaoqin/dsh-composer-prompt-optimizer
 category: ui
+tarball: https://github.com/keshaoqin/dsh-composer-prompt-optimizer/releases/download/v0.2.0/dsh-composer-prompt-optimizer-0.2.0.tgz
 description:
-  en: Adds a resident Optimize prompt / Revert button to the DSH composer, rewriting the draft with the current model while preserving intent and language.
-  zh: 在 DSH 输入框常驻「优化提示词 / 回退原文」按钮，用当前模型改写草稿并保持原意与语言。
+  en: "A resident Optimize / Revert button in the DSH composer: one click rewrites the draft with the model selected in that composer, keeps the original restorable, and explains any failure with a cause, an error code and how to recover."
+  zh: "DSH 输入框常驻「优化提示词 / 回退原文」按钮：用输入框当前选中的模型就地改写草稿，原文随时可回退，失败时说明原因、错误码与处理办法。"

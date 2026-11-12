@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Prompt Optimizer",
-    "description": "A resident optimize/revert button in the composer that rewrites your draft prompt with a fast model while preserving intent and language."
+    "description": "A resident Optimize / Revert button in the DSH composer. It rewrites the draft with the model selected in that composer, keeps the original restorable, and explains any failure with a cause, an error code and how to recover."
   }
 }

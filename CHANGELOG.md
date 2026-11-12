@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 — 2026-11-12
+
+- Docs: rewrote the Chinese and English README around the real implementation —
+  design (Host/Client split, the four safeguards, the eight trade-offs), how the
+  prompt is actually built (six layers, with the exact prohibitions), real
+  before/after samples with latency, the full error-code table, install/use and
+  the two publishing steps.
+- Docs: `docs/marketplace-entry.yml` now matches the awesome-dsh-plugin format
+  (`url` / `name` / `category` / `tarball` / bilingual `description`).
+- No runtime behaviour change from 0.1.2; version bumped so the published
+  READMEs and package metadata carry the new documentation.
+
 ## 0.1.2 — 2026-11-11
 
 - Fixed: the optimizer now always uses the model selected in the composer's
